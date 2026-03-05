@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Afonso Soares · OGD · Negociação 3D</title>
+    <!-- Fontes e ícones -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Three.js (para fundo VFX) -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js"
+            }
+        }
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #050b12;
+            color: #edf4ff;
+            overflow-x: hidden;
+        }
+
+        /* Canvas 3D fixo como fundo */
+        #three-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Camada de conteúdo com glassmorphism */
+        .content {
+            position: relative;
+            z-index: 10;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem 2.5rem 4rem;
+            background: rgba(5, 15, 25, 0.55);
+            backdrop-filter: blur(8px);
+            border-left: 2px solid rgba(255, 170, 70, 0.25);
+            border-right: 2px solid rgba(255, 170, 70, 0.25);
+            box-shadow: 0 0 60px rgba(255, 140, 0, 0.2);
+            transform-style: preserve-3d;
+            animation: rise 1.6s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        @keyframes rise {
+            0% { opacity: 0; transform: translateY(60px) rotateX(5deg); }
+            100% { opacity: 1; transform: translateY(0) rotateX(0); }
+        }
+
+        /* HEADER futurista */
+        .header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(10, 22, 35, 0.8);
+            backdrop-filter: blur(16px);
+            padding: 1.5rem 2.5rem;
+            border-radius: 80px;
+            border: 1px solid rgba(255, 180, 70, 0.6);
+            box-shadow: 0 30px 40px -20px #000, 0 0 0 2px rgba(255, 150, 0, 0.2) inset;
+            transform: translateZ(25px) rotateX(1deg);
+            margin-bottom: 2.5rem;
+            transition: 0.4s;
+        }
+
+        .header:hover {
+            border-color: #ffae42;
+            box-shadow: 0 40px 60px -15px #ff8c1a;
+        }
+
+        .header h1 {
+            font-size: 2.8rem;
+            font-weight: 800;
+            background: linear-gradient(145deg, #fff3d6, #ffc87a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.02em;
+            filter: drop-shadow(0 0 18px #ffa726);
+        }
+
+        .badge {
+            background: #ffb347;
+            color: #0a1c2b;
+            font-weight: 800;
+            padding: 0.8rem 2rem;
+            border-radius: 60px;
+            font-size: 1.4rem;
+            box-shadow: 0 12px 0 #b26400, 0 20px 30px #00000060;
+            transform: translateY(-3px) rotate(1deg);
+            transition: 0.2s;
+        }
+
+        .badge i {
+            margin-right: 10px;
+        }
+
+        /* grid de cartões 3D */
+        .grid-3d {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+            gap: 2rem;
+            margin: 2.5rem 0;
+        }
+
+        .card-3d {
+            background: rgba(18, 32, 45, 0.75);
+            backdrop-filter: blur(15px);
+            border-radius: 40px;
+            padding: 2rem 1.8rem;
+            border: 1px solid rgba(255, 170, 60, 0.4);
+            box-shadow: 0 30px 30px -20px #000, 0 0 30px rgba(255, 150, 0, 0.2);
+            transform-style: preserve-3d;
+            transition: 0.35s cubic-bezier(0.15, 0.8, 0.3, 1.2);
+            height: 100%;
+        }
+
+        .card-3d:hover {
+            transform: rotateY(3deg) rotateX(2deg) translateZ(30px) scale(1.02);
+            border-color: #ffa83d;
+            box-shadow: 0 50px 60px -15px #f90, 0 0 60px #ffb95c;
+        }
+
+        .card-3d h2 {
+            font-size: 2rem;
+            margin-bottom: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-3d h2 i {
+            color: #ffb347;
+            filter: drop-shadow(0 0 8px #ffae42);
+        }
+
+        /* listas com ícones animados */
+        .icon-list {
+            list-style: none;
+        }
+
+        .icon-list li {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 1rem 0;
+            padding: 0.5rem 1rem;
+            background: rgba(255,255,255,0.02);
+            border-radius: 50px;
+            border: 1px solid rgba(255,180,60,0.2);
+            transition: 0.2s;
+            font-weight: 400;
+        }
+
+        .icon-list li i {
+            color: #f3b33d;
+            font-size: 1.5rem;
+            width: 2rem;
+            text-align: center;
+        }
+
+        .icon-list li:hover {
+            background: rgba(243, 179, 61, 0.15);
+            transform: translateX(12px);
+            border-color: #f3b33d;
+        }
+
+        /* secções com título estilizado */
+        .section-title {
+            font-size: 2.4rem;
+            font-weight: 700;
+            margin: 3rem 0 1.8rem 0;
+            padding-left: 1.8rem;
+            border-left: 10px solid #f3b33d;
+            text-shadow: 0 0 20px #ffb85b;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .section-title i {
+            font-size: 2.8rem;
+            color: #ffae42;
+            filter: drop-shadow(0 0 12px #f90);
+        }
+
+        /* tags / chips */
+        .chip {
+            background: #ffb042;
+            color: #0b1d2b;
+            padding: 0.5rem 1.5rem;
+            border-radius: 40px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            display: inline-block;
+            margin: 0.3rem;
+            box-shadow: 0 0 15px #ffa726;
+            border: 1px solid #ffd58c;
+        }
+
+        .chip i {
+            margin-right: 6px;
+        }
+
+        /* bloco especial de estratégias */
+        .vfx-block {
+            background: rgba(0, 18, 30, 0.7);
+            backdrop-filter: blur(20px);
+            border-radius: 60px;
+            padding: 2.2rem;
+            border: 2px solid #f3b33d;
+            box-shadow: 0 0 80px rgba(255, 140, 0, 0.4);
+            margin: 2rem 0;
+            transform: rotateX(0.8deg);
+            transition: 0.3s;
+        }
+
+        .vfx-block:hover {
+            box-shadow: 0 0 120px #ffae42, 0 20px 40px black;
+        }
+
+        /* botão interativo 3d */
+        .btn-3d {
+            background: #f3b33d;
+            border: none;
+            color: #0f1f2f;
+            font-weight: 800;
+            padding: 1rem 2.5rem;
+            border-radius: 60px;
+            font-size: 1.4rem;
+            box-shadow: 0 15px 0 #9e6a1f, 0 0 30px #ffb347;
+            transition: 0.06s linear;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-3d:active {
+            transform: translateY(10px);
+            box-shadow: 0 5px 0 #9e6a1f, 0 0 60px #ffcc66;
+        }
+
+        /* rodapé */
+        .footer-3d {
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(12px);
+            border-radius: 90px;
+            padding: 1.5rem 2.5rem;
+            margin-top: 4rem;
+            border: 1px solid #f3b33d;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            transform: translateZ(20px);
+        }
+
+        .glow {
+            animation: softGlow 3s infinite alternate;
+        }
+
+        @keyframes softGlow {
+            0% { text-shadow: 0 0 8px #ffaa33; }
+            100% { text-shadow: 0 0 25px #ffdd99, 0 0 10px #ffae42; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Canvas 3D (partículas e elementos flutuantes) -->
+    <div id="three-canvas"></div>
+
+    <div class="content">
+        <!-- HEADER -->
+        <div class="header">
+            <h1><i class="fas fa-bolt" style="color: #f3b33d;"></i> NEGOCIAÇÃO DESPORTIVA <span style="font-size: 1.8rem; background: rgba(0,0,0,0.3); padding: 0.3rem 1rem; border-radius: 40px; margin-left: 1rem;">OGD · UFCD 7843</span></h1>
+            <div class="badge"><i class="fas fa-user-astronaut"></i> Afonso Soares · nº1 · 12ºGD</div>
+        </div>
+
+        <!-- Linha de contexto -->
+        <div style="display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; margin-bottom: 2rem;">
+            <span class="chip"><i class="fas fa-chalkboard-teacher"></i> Prof. Sónia Regalado</span>
+            <span class="chip"><i class="fas fa-calendar-alt"></i> março 2026</span>
+            <span class="chip"><i class="fas fa-trophy"></i> simulação clube × fornecedor</span>
+        </div>
+
+        <!-- a) Necessidades do clube -->
+        <div class="section-title"><i class="fas fa-clipboard-list"></i> a) Necessidades · clube</div>
+        <div class="grid-3d">
+            <div class="card-3d">
+                <h2><i class="fas fa-tshirt"></i> Equipamentos</h2>
+                <ul class="icon-list">
+                    <li><i class="fas fa-shirt"></i> 30 camisolas jogo (personalizadas)</li>
+                    <li><i class="fas fa-socks"></i> 20 calções térmicos treino</li>
+                    <li><i class="fas fa-shoe-prints"></i> 15 chuteiras society (38-44)</li>
+                    <li><i class="fas fa-vest"></i> 50 coletes (2 cores)</li>
+                    <li><i class="fas fa-futbol"></i> 10 bolas oficiais FIFA</li>
+                </ul>
+            </div>
+            <div class="card-3d">
+                <h2><i class="fas fa-weight-hanging"></i> Quantidades</h2>
+                <ul class="icon-list">
+                    <li><i class="fas fa-clock"></i> 60% até 20/04/2026</li>
+                    <li><i class="fas fa-clock"></i> 40% até 10/05 (campeonato)</li>
+                    <li><i class="fas fa-truck"></i> Entrega faseada / stock</li>
+                    <li><i class="fas fa-percent"></i> Desconto por recompra</li>
+                </ul>
+            </div>
+            <div class="card-3d">
+                <h2><i class="fas fa-hourglass-half"></i> Prazos</h2>
+                <ul class="icon-list">
+                    <li><i class="fas fa-calendar-check"></i> Amostras: 25/03</li>
+                    <li><i class="fas fa-users"></i> Apresentação: 02/05</li>
+                    <li><i class="fas fa-futbol"></i> Jogo treino: 08/05</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- b) Pesquisa de mercado e estratégias de abordagem (com foco no PDF) -->
+        <div class="section-title"><i class="fas fa-chart-pie"></i> b) Mercado & estratégias de abordagem</div>
+        <div class="vfx-block">
+            <div style="display: flex; flex-wrap: wrap; gap: 2rem;">
+                <div style="flex: 2; min-width: 280px;">
+                    <p style="font-size:1.8rem; font-weight:600;"><i class="fas fa-store"></i> Fornecedores-alvo:</p>
+                    <div>
+                        <span class="chip"><i class="fas fa-check"></i> DesportTotal</span>
+                        <span class="chip"><i class="fas fa-check"></i> ProSports</span>
+                        <span class="chip"><i class="fas fa-check"></i> AtletaPro</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(2,1fr); gap: 1.2rem; margin-top: 2rem;">
+                        <div class="card-3d" style="padding:1.2rem;"><i class="fas fa-mask" style="color:#f90;"></i> <strong>Pretexto</strong> “stock” → consignação</div>
+                        <div class="card-3d" style="padding:1.2rem;"><i class="fas fa-brain"></i> <strong>Preconceito</strong> → provas, referências</div>
+                        <div class="card-3d" style="padding:1.2rem;"><i class="fas fa-question"></i> <strong>Dúvida</strong> → demonstração</div>
+                        <div class="card-3d" style="padding:1.2rem;"><i class="fas fa-shield"></i> <strong>Desvantagem real</strong> → benefícios</div>
+                    </div>
+                </div>
+                <div style="flex: 1; border-left: 3px solid #f3b33d; padding-left: 1.8rem;">
+                    <h3><i class="fas fa-dragon"></i> Ficha 92 · táticas</h3>
+                    <ul class="icon-list">
+                        <li><i class="fas fa-hand-peace"></i> Cliente nervoso: escuta total (catarse)</li>
+                        <li><i class="fas fa-rotate-left"></i> Efeito boomerang: empatia</li>
+                        <li><i class="fas fa-chart-line"></i> Concessões planeadas</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- c) Proposta inicial + estratégias de concessão -->
+        <div class="section-title"><i class="fas fa-file-signature"></i> c) Proposta & concessões</div>
+        <div style="display: flex; flex-wrap: wrap; gap: 2rem;">
+            <div class="card-3d" style="flex: 2;">
+                <h2><i class="fas fa-hand-holding-usd"></i> Proposta do clube</h2>
+                <div style="background: #112734; border-radius: 40px; padding: 1.8rem;">
+                    <div style="font-size: 2.5rem; font-weight:800;">€2.870 <span style="font-size:1.2rem;">(lote A urgente)</span></div>
+                    <div style="font-size: 2rem;">€2.150 <span style="font-size:1rem;">(lote B maio)</span></div>
+                    <div class="chip" style="margin-top:1rem;"><i class="fas fa-tag"></i> desconto 4% se total fechado até 31/03</div>
+                </div>
+                <p style="margin-top:1.2rem;"><i class="fas fa-check-circle" style="color:#2ecc71;"></i> Garantia 2 anos · devolução 30 dias</p>
+            </div>
+            <div class="card-3d" style="flex: 1.2; background: #102f3a;">
+                <h2><i class="fas fa-chess-board"></i> Concessões</h2>
+                <ul class="icon-list">
+                    <li><i class="fas fa-up-long"></i> Oferta inicial 10% acima</li>
+                    <li><i class="fas fa-down-long"></i> Conceder em degraus (2%)</li>
+                    <li><i class="fas fa-handshake"></i> Nunca aceitar primeira oferta</li>
+                    <li><i class="fas fa-gift"></i> Nada gratuito – contrapartida</li>
+                </ul>
+                <div class="btn-3d" onclick="this.style.transform='translateY(10px)'; setTimeout(()=>this.style.transform='',150);"><i class="fas fa-dice-d6"></i> SIMULAR CONCESSÃO</div>
+            </div>
+        </div>
+
+        <!-- d) Preparação / argumentos persuasivos -->
+        <div class="section-title"><i class="fas fa-comment-dots"></i> d) Persuasão · argumentos VFX</div>
+        <div class="grid-3d">
+            <div class="card-3d"><i class="fas fa-medal" style="font-size:3.5rem; color:#f3b33d;"></i> <strong>Vantagem técnica</strong> – tecido anti‑odor, garantia 2 anos</div>
+            <div class="card-3d"><i class="fas fa-rocket" style="font-size:3.5rem; color:#f3b33d;"></i> <strong>Logística própria</strong> – 98% entregas atempadas</div>
+            <div class="card-3d"><i class="fas fa-chart-simple" style="font-size:3.5rem; color:#f3b33d;"></i> <strong>Custo por treino</strong> – mais baixo do mercado</div>
+            <div class="card-3d"><i class="fas fa-face-smile" style="font-size:3.5rem; color:#f3b33d;"></i> <strong>Cliente nervoso?</strong> – escuta ativa + anotações</div>
+        </div>
+
+        <!-- extra: citação com tratamento de objeções (fonte PDF) -->
+        <div style="margin: 3rem 0; padding: 2rem; background: rgba(0,30,40,0.5); border-radius: 100px; border: 2px dashed #f3b33d; text-align: center;">
+            <p style="font-size: 1.8rem;"><i class="fas fa-quote-left" style="color:#f90;"></i> Uma objeção bem respondida é meio caminho para o acordo <i class="fas fa-quote-right" style="color:#f90;"></i></p>
+            <p style="opacity:0.8;">— adaptado da Ficha 92, ponto 2 (tratamento de objeções)</p>
+        </div>
+
+        <!-- Bibliografia glow -->
+        <div style="background: rgba(243,179,61,0.12); border-radius: 90px; padding: 2rem 2.5rem; margin: 2.5rem 0; border: 1px solid #f3b33d;">
+            <i class="fas fa-book-open" style="color:#f3b33d; font-size: 2.8rem; margin-right: 20px;"></i>
+            <span style="font-size: 1.6rem;">Bibliografia: Ficha Informativa n.º92 · Regalado, S. · dados de mercado 2026</span>
+        </div>
+
+        <!-- Conclusão (acordo simulado) -->
+        <div class="card-3d" style="background: #1c4050; margin: 1.5rem 0;">
+            <h2 style="font-size: 2.5rem;"><i class="fas fa-flag-checkered"></i> Conclusão da negociação</h2>
+            <p style="font-size: 1.5rem;">Após concessões decrescentes e argumentação emocional + factos: redução de 3,5% + brindes (12 garrafas personalizadas) por visibilidade nas redes. Acordo fechado com sucesso.</p>
+        </div>
+
+        <!-- rodapé -->
+        <div class="footer-3d">
+            <span><i class="fas fa-crown" style="color:#f3b33d;"></i> Afonso Soares, nº1, 12ºGD</span>
+            <span><i class="fas fa-sparkles"></i> OGD · março 2026</span>
+            <span><i class="fas fa-bolt"></i> criativo · 3D · VFX</span>
+        </div>
+    </div>
+
+    <!-- SCRIPT THREE.JS (fundo VFX melhorado) -->
+    <script type="module">
+        import * as THREE from 'three';
+
+        const canvas = document.getElementById('three-canvas');
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0b141f);
+
+        const camera = new THREE.PerspectiveCamera(60, w / h, 0.1, 1000);
+        camera.position.set(2, 1, 12);
+        camera.lookAt(0, 0, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+        renderer.setSize(w, h);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        canvas.appendChild(renderer.domElement);
+
+        // Luzes
+        const ambient = new THREE.AmbientLight(0x404060);
+        scene.add(ambient);
+        const dirLight = new THREE.DirectionalLight(0xffeedd, 1.0);
+        dirLight.position.set(4, 6, 8);
+        scene.add(dirLight);
+        const pointLight = new THREE.PointLight(0xff9933, 0.8, 30);
+        pointLight.position.set(-3, 2, 5);
+        scene.add(pointLight);
+
+        // Partículas douradas
+        const particleGeo = new THREE.BufferGeometry();
+        const count = 2500;
+        const pos = new Float32Array(count * 3);
+        for (let i = 0; i < count * 3; i += 3) {
+            pos[i] = (Math.random() - 0.5) * 40;
+            pos[i+1] = (Math.random() - 0.5) * 25;
+            pos[i+2] = (Math.random() - 0.5) * 30 - 15;
+        }
+        particleGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+        const particleMat = new THREE.PointsMaterial({
+            color: 0xffaa33,
+            size: 0.1,
+            blending: THREE.AdditiveBlending,
+            transparent: true,
+            opacity: 0.4,
+            map: (() => {
+                const c = document.createElement('canvas');
+                c.width = 8; c.height = 8;
+                const ctx = c.getContext('2d');
+                ctx.fillStyle = '#ffaa33';
+                ctx.beginPath(); ctx.arc(4,4,2.5,0,2*Math.PI); ctx.fill();
+                return new THREE.CanvasTexture(c);
+            })(),
+        });
+        const particles = new THREE.Points(particleGeo, particleMat);
+        scene.add(particles);
+
+        // Esferas flutuantes translúcidas
+        const sphereGroup = new THREE.Group();
+        for (let i=0; i<10; i++) {
+            const geo = new THREE.IcosahedronGeometry(0.25 + Math.random()*0.2, 2);
+            const mat = new THREE.MeshStandardMaterial({
+                color: new THREE.Color().setHSL(0.09 + Math.random()*0.1, 0.9, 0.6),
+                emissive: 0x442200,
+                emissiveIntensity: 0.7,
+                transparent: true,
+                opacity: 0.25,
+            });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.set(
+                (Math.random() - 0.5)*12,
+                (Math.random() - 0.5)*6,
+                (Math.random() - 0.5)*20 - 8
+            );
+            sphereGroup.add(mesh);
+        }
+        scene.add(sphereGroup);
+
+        // Anel decorativo
+        const ringGeo = new THREE.TorusGeometry(2.4, 0.05, 16, 100);
+        const ringMat = new THREE.MeshStandardMaterial({ color: 0xff9900, emissive: 0x331100 });
+        const ring = new THREE.Mesh(ringGeo, ringMat);
+        ring.rotation.x = Math.PI / 2.5;
+        ring.rotation.z = 0.7;
+        ring.position.y = 1.2;
+        ring.position.z = -6;
+        scene.add(ring);
+
+        // Linhas de grade suave
+        const gridHelper = new THREE.GridHelper(22, 18, 0xffaa33, 0x2a4858);
+        gridHelper.position.y = -2.5;
+        scene.add(gridHelper);
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            particles.rotation.y += 0.00015;
+            particles.rotation.x += 0.0001;
+            sphereGroup.rotation.y += 0.0006;
+            sphereGroup.rotation.x += 0.0003;
+            ring.rotation.z += 0.002;
+            ring.rotation.x += 0.001;
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
