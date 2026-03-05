@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Afonso Soares · OGD · Negociação 3D</title>
+    <title>Afonso Soares · OGD · Negociação 3D (concessão funcional)</title>
     <!-- Fontes e ícones -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -235,7 +235,7 @@
             box-shadow: 0 0 120px #ffae42, 0 20px 40px black;
         }
 
-        /* botão interativo 3d */
+        /* botão interativo 3d FUNCIONAL (com concessão via JS) */
         .btn-3d {
             background: #f3b33d;
             border: none;
@@ -250,11 +250,23 @@
             display: inline-flex;
             align-items: center;
             gap: 12px;
+            margin-top: 1.2rem;
         }
 
         .btn-3d:active {
             transform: translateY(10px);
             box-shadow: 0 5px 0 #9e6a1f, 0 0 60px #ffcc66;
+        }
+
+        /* Área da proposta que será alterada */
+        .proposta-valor {
+            font-size: 2.5rem;
+            font-weight: 800;
+            transition: all 0.3s ease;
+        }
+        .destaque-concessao {
+            color: #b3ffaa;
+            text-shadow: 0 0 25px #86ff6f;
         }
 
         /* rodapé */
@@ -270,15 +282,6 @@
             flex-wrap: wrap;
             gap: 1.5rem;
             transform: translateZ(20px);
-        }
-
-        .glow {
-            animation: softGlow 3s infinite alternate;
-        }
-
-        @keyframes softGlow {
-            0% { text-shadow: 0 0 8px #ffaa33; }
-            100% { text-shadow: 0 0 25px #ffdd99, 0 0 10px #ffae42; }
         }
     </style>
 </head>
@@ -362,15 +365,15 @@
             </div>
         </div>
 
-        <!-- c) Proposta inicial + estratégias de concessão -->
+        <!-- c) Proposta inicial + estratégias de concessão (COM BOTÃO FUNCIONAL) -->
         <div class="section-title"><i class="fas fa-file-signature"></i> c) Proposta & concessões</div>
         <div style="display: flex; flex-wrap: wrap; gap: 2rem;">
-            <div class="card-3d" style="flex: 2;">
+            <div class="card-3d" style="flex: 2;" id="propostaCard">
                 <h2><i class="fas fa-hand-holding-usd"></i> Proposta do clube</h2>
                 <div style="background: #112734; border-radius: 40px; padding: 1.8rem;">
-                    <div style="font-size: 2.5rem; font-weight:800;">€2.870 <span style="font-size:1.2rem;">(lote A urgente)</span></div>
-                    <div style="font-size: 2rem;">€2.150 <span style="font-size:1rem;">(lote B maio)</span></div>
-                    <div class="chip" style="margin-top:1rem;"><i class="fas fa-tag"></i> desconto 4% se total fechado até 31/03</div>
+                    <div class="proposta-valor" id="valorLoteA">€2.870 <span style="font-size:1.2rem;">(lote A urgente)</span></div>
+                    <div style="font-size: 2rem;" id="valorLoteB">€2.150 <span style="font-size:1rem;">(lote B maio)</span></div>
+                    <div class="chip" style="margin-top:1rem;" id="descontoChip"><i class="fas fa-tag"></i> desconto 4% se total fechado até 31/03</div>
                 </div>
                 <p style="margin-top:1.2rem;"><i class="fas fa-check-circle" style="color:#2ecc71;"></i> Garantia 2 anos · devolução 30 dias</p>
             </div>
@@ -382,7 +385,8 @@
                     <li><i class="fas fa-handshake"></i> Nunca aceitar primeira oferta</li>
                     <li><i class="fas fa-gift"></i> Nada gratuito – contrapartida</li>
                 </ul>
-                <div class="btn-3d" onclick="this.style.transform='translateY(10px)'; setTimeout(()=>this.style.transform='',150);"><i class="fas fa-dice-d6"></i> SIMULAR CONCESSÃO</div>
+                <!-- BOTÃO FUNCIONAL: ao clicar, simula uma concessão (desconto adicional) -->
+                <button class="btn-3d" id="btnConcessao"><i class="fas fa-dice-d6"></i> SIMULAR CONCESSÃO</button>
             </div>
         </div>
 
@@ -421,8 +425,9 @@
         </div>
     </div>
 
-    <!-- SCRIPT THREE.JS (fundo VFX melhorado) -->
+    <!-- Script para concessão funcional e fundo Three.js -->
     <script type="module">
+        // ===== FUNDO 3D (Three.js) =====
         import * as THREE from 'three';
 
         const canvas = document.getElementById('three-canvas');
@@ -479,7 +484,7 @@
         const particles = new THREE.Points(particleGeo, particleMat);
         scene.add(particles);
 
-        // Esferas flutuantes translúcidas
+        // Esferas flutuantes
         const sphereGroup = new THREE.Group();
         for (let i=0; i<10; i++) {
             const geo = new THREE.IcosahedronGeometry(0.25 + Math.random()*0.2, 2);
@@ -510,7 +515,7 @@
         ring.position.z = -6;
         scene.add(ring);
 
-        // Linhas de grade suave
+        // Linhas de grade
         const gridHelper = new THREE.GridHelper(22, 18, 0xffaa33, 0x2a4858);
         gridHelper.position.y = -2.5;
         scene.add(gridHelper);
@@ -533,6 +538,58 @@
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // ===== CONCESSÃO FUNCIONAL (JS puro) =====
+        // Elementos da proposta
+        const valorLoteA = document.getElementById('valorLoteA');
+        const valorLoteB = document.getElementById('valorLoteB');
+        const chipDesconto = document.getElementById('descontoChip');
+        const btn = document.getElementById('btnConcessao');
+
+        // Estado: quantas concessões já foram feitas?
+        let concessoesFeitas = 0;
+
+        // Valores originais (numéricos)
+        let precoA = 2870;
+        let precoB = 2150;
+
+        // Função para formatar em euro
+        function formatarEuro(valor) {
+            return '€' + valor.toFixed(0);
+        }
+
+        btn.addEventListener('click', () => {
+            if (concessoesFeitas >= 3) {
+                alert('Já concedeste o máximo (3 concessões). O fornecedor não pode mais baixar.');
+                return;
+            }
+
+            // Simula concessão: reduz 2% do valor total (pode ser visto como desconto adicional)
+            // Vamos reduzir 1.5% em A e 1.5% em B de forma simples
+            let fatorReducao = 0.985; // 1.5% de desconto
+            precoA = precoA * fatorReducao;
+            precoB = precoB * fatorReducao;
+
+            // Atualiza DOM
+            valorLoteA.innerHTML = `${formatarEuro(precoA)} <span style="font-size:1.2rem;">(lote A urgente)</span>`;
+            valorLoteB.innerHTML = `${formatarEuro(precoB)} <span style="font-size:1rem;">(lote B maio)</span>`;
+
+            // Altera o chip para mostrar nova condição
+            concessoesFeitas++;
+            chipDesconto.innerHTML = `<i class="fas fa-tag"></i> concessão #${concessoesFeitas}: -1.5% (acumulado)`;
+
+            // Pequeno efeito visual: piscar verde
+            valorLoteA.classList.add('destaque-concessao');
+            valorLoteB.classList.add('destaque-concessao');
+            setTimeout(() => {
+                valorLoteA.classList.remove('destaque-concessao');
+                valorLoteB.classList.remove('destaque-concessao');
+            }, 400);
+
+            // feedback no botão (já tem active, mas pode-se simular um clique)
+            btn.style.transform = 'translateY(10px)';
+            setTimeout(() => btn.style.transform = '', 120);
         });
     </script>
 </body>
