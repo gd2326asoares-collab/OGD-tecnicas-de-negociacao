@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Afonso Soares e Alexandre Brito · OGD · Negociação 3D (concessão funcional)</title>
+    <title>Afonso & Alexandre · OGD · Negociação 3D</title>
     <!-- Fontes e ícones -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -63,7 +63,7 @@
             100% { opacity: 1; transform: translateY(0) rotateX(0); }
         }
 
-        /* HEADER futurista */
+        /* HEADER futurista - agora com dois alunos */
         .header {
             display: flex;
             flex-wrap: wrap;
@@ -95,20 +95,28 @@
             filter: drop-shadow(0 0 18px #ffa726);
         }
 
+        .badge-container {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
         .badge {
             background: #ffb347;
             color: #0a1c2b;
             font-weight: 800;
-            padding: 0.8rem 2rem;
+            padding: 0.8rem 1.8rem;
             border-radius: 60px;
-            font-size: 1.4rem;
+            font-size: 1.2rem;
             box-shadow: 0 12px 0 #b26400, 0 20px 30px #00000060;
             transform: translateY(-3px) rotate(1deg);
             transition: 0.2s;
+            white-space: nowrap;
         }
 
         .badge i {
-            margin-right: 10px;
+            margin-right: 8px;
         }
 
         /* grid de cartões 3D */
@@ -291,16 +299,20 @@
     <div id="three-canvas"></div>
 
     <div class="content">
-        <!-- HEADER -->
+        <!-- HEADER com os dois alunos -->
         <div class="header">
             <h1><i class="fas fa-bolt" style="color: #f3b33d;"></i> NEGOCIAÇÃO DESPORTIVA <span style="font-size: 1.8rem; background: rgba(0,0,0,0.3); padding: 0.3rem 1rem; border-radius: 40px; margin-left: 1rem;">OGD · UFCD 7843</span></h1>
-            <div class="badge"><i class="fas fa-user-astronaut"></i> Afonso Soares · nº1 · Alexandre Brito · nº2 · 12ºGD</div>
+            <div class="badge-container">
+                <div class="badge"><i class="fas fa-user-astronaut"></i> Afonso Soares · nº1</div>
+                <div class="badge"><i class="fas fa-user-astronaut"></i> Alexandre Brito · nº2</div>
+            </div>
         </div>
 
-        <!-- Linha de contexto -->
+        <!-- Linha de contexto (agora com os dois) -->
         <div style="display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; margin-bottom: 2rem;">
             <span class="chip"><i class="fas fa-chalkboard-teacher"></i> Prof. Sónia Regalado</span>
             <span class="chip"><i class="fas fa-calendar-alt"></i> março 2026</span>
+            <span class="chip"><i class="fas fa-users"></i> Afonso & Alexandre</span>
             <span class="chip"><i class="fas fa-trophy"></i> simulação clube × fornecedor</span>
         </div>
 
@@ -417,9 +429,9 @@
             <p style="font-size: 1.5rem;">Após concessões decrescentes e argumentação emocional + factos: redução de 3,5% + brindes (12 garrafas personalizadas) por visibilidade nas redes. Acordo fechado com sucesso.</p>
         </div>
 
-        <!-- rodapé -->
+        <!-- rodapé com os dois autores -->
         <div class="footer-3d">
-            <span><i class="fas fa-crown" style="color:#f3b33d;"></i> Afonso Soares, Alexandre Brito nº1 e 2, 12ºGD</span>
+            <span><i class="fas fa-crown" style="color:#f3b33d;"></i> Afonso Soares (nº1) & Alexandre Brito (nº2) · 12ºGD</span>
             <span><i class="fas fa-sparkles"></i> OGD · março 2026</span>
             <span><i class="fas fa-bolt"></i> criativo · 3D · VFX</span>
         </div>
@@ -565,8 +577,7 @@
                 return;
             }
 
-            // Simula concessão: reduz 2% do valor total (pode ser visto como desconto adicional)
-            // Vamos reduzir 1.5% em A e 1.5% em B de forma simples
+            // Simula concessão: reduz 1.5% do valor total 
             let fatorReducao = 0.985; // 1.5% de desconto
             precoA = precoA * fatorReducao;
             precoB = precoB * fatorReducao;
